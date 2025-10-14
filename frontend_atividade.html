@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload de Múltiplos Arquivos - Atividade</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .file-input-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 20px;
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        }
+
+        .file-input-label:hover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            transform: translateY(-2px);
+        }
+
+        .file-input-label i {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .file-input-label span {
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .file-input {
+            opacity: 0;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .file-info p {
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .selected-files {
+            margin-top: 15px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .file-item span {
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .btn-upload {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-upload:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-upload:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .message.success {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .message.error {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container fade-in">
+        <div class="header">
+            <h1><i class="fas fa-cloud-upload-alt"></i> Upload Manager</h1>
+            <p>Envie múltiplas imagens de forma rápida e segura</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="file-input-container">
+                <label for="arquivoInput" class="file-input-label">
+                    <i class="fas fa-images"></i>
+                    <span>Clique aqui ou arraste suas imagens</span>
+                </label>
+                <input type="file" id="arquivoInput" class="file-input" multiple accept="image/*">
+            </div>
+
+            <div class="file-info">
+                <p><i class="fas fa-info-circle"></i> <strong>Formatos aceitos:</strong> PNG, JPEG, JPG</p>
+                <p><i class="fas fa-weight-hanging"></i> <strong>Tamanho máximo:</strong> 5MB por arquivo</p>
+                <p><i class="fas fa-hashtag"></i> <strong>Quantidade:</strong> Máximo 10 arquivos</p>
+            </div>
+
+            <div id="arquivosSelecionados" class="selected-files"></div>
+        </div>
+
+        <div class="btn-container">
+            <button id="btnEnviar" class="btn-upload" onclick="enviarArquivos()">
+                <i class="fas fa-upload"></i> Enviar Arquivos
+            </button>
+        </div>
+
+        <div id="mensagem" class="message"></div>
+    </div>
+
+    <script>
+        // Referências aos elementos DOM
+        const arquivoInput = document.getElementById('arquivoInput');
+        const btnEnviar = document.getElementById('btnEnviar');
+        const mensagemDiv = document.getElementById('mensagem');
+        const arquivosSelecionadosDiv = document.getElementById('arquivosSelecionados');
+
+        // Event listener para mostrar arquivos selecionados
+        arquivoInput.addEventListener('change', function() {
+            mostrarArquivosSelecionados();
+        });
+
+        // Função para mostrar os arquivos selecionados
+        function mostrarArquivosSelecionados() {
+            const arquivos = arquivoInput.files;
+            arquivosSelecionadosDiv.innerHTML = '';
+
+            if (arquivos.length > 0) {
+                arquivosSelecionadosDiv.innerHTML = '<h4 style="color: #333; margin-bottom: 10px;"><i class="fas fa-file-image"></i> Arquivos Selecionados:</h4>';
+                
+                for (let i = 0; i < arquivos.length; i++) {
+                    const arquivo = arquivos[i];
+                    const tamanhoMB = (arquivo.size / 1024 / 1024).toFixed(2);
+                    
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.innerHTML = `
+                        <i class="fas fa-image" style="color: #667eea; margin-right: 10px;"></i>
+                        <span><strong>${arquivo.name}</strong> (${tamanhoMB} MB)</span>
+                    `;
+                    arquivosSelecionadosDiv.appendChild(fileItem);
+                }
+            }
+        }
+
+        // Função para exibir mensagens
+        function exibirMensagem(texto, tipo) {
+            mensagemDiv.textContent = texto;
+            mensagemDiv.className = `message ${tipo}`;
+            mensagemDiv.style.display = 'block';
+            
+            // Auto-hide após 5 segundos
+            setTimeout(() => {
+                mensagemDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Função para alterar estado do botão
+        function alterarEstadoBotao(carregando) {
+            if (carregando) {
+                btnEnviar.innerHTML = '<div class="loading"></div>Enviando...';
+                btnEnviar.disabled = true;
+            } else {
+                btnEnviar.innerHTML = '<i class="fas fa-upload"></i> Enviar Arquivos';
+                btnEnviar.disabled = false;
+            }
+        }
+
+        // FUNÇÃO PRINCIPAL - IMPLEMENTAR AQUI
+        async function enviarArquivos() {
+            // Verificar se há arquivos selecionados
+            if (!arquivoInput.files || arquivoInput.files.length === 0) {
+                exibirMensagem('Por favor, selecione pelo menos um arquivo!', 'error');
+                return;
+            }
+
+            // Alterar estado do botão para carregando
+            alterarEstadoBotao(true);
+
+            try {
+                // 1. Instanciar o FormData
+                const formData = new FormData();
+
+                // 2. Iterar a FileList
+                for (const arquivo of arquivoInput.files) {
+                    // 3. Anexar Arquivos
+                    formData.append('meusArquivos', arquivo);
+                }
+
+                // 4. Executar o fetch
+                const response = await fetch('http://localhost:3000/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // 5. Tratamento de Resposta
+                if (response.ok) {
+                    const resultado = await response.json();
+                    exibirMensagem(`✅ Sucesso! ${arquivoInput.files.length} arquivo(s) enviado(s) com êxito!`, 'success');
+                    
+                    // Limpar seleção após sucesso
+                    arquivoInput.value = '';
+                    arquivosSelecionadosDiv.innerHTML = '';
+                } else {
+                    const erro = await response.json();
+                    exibirMensagem(`❌ Erro: ${erro.message || 'Falha no upload'}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Erro na requisição:', error);
+                exibirMensagem('❌ Erro de conexão com o servidor. Verifique se o servidor está rodando.', 'error');
+            } finally {
+                // Restaurar estado do botão
+                alterarEstadoBotao(false);
+            }
+        }
+
+        // Drag and Drop functionality
+        const container = document.querySelector('.container');
+        const fileLabel = document.querySelector('.file-input-label');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            container.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            container.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            container.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            fileLabel.style.borderColor = '#764ba2';
+            fileLabel.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3))';
+        }
+
+        function unhighlight(e) {
+            fileLabel.style.borderColor = '#667eea';
+            fileLabel.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))';
+        }
+
+        container.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            arquivoInput.files = files;
+            mostrarArquivosSelecionados();
+        }
+    </script>
+</body>
+</html>
