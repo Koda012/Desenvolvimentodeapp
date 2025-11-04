@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Autenticação - Login & Registro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1rem;
+            font-weight: 300;
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 30px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 15px;
+            padding: 5px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: #667eea;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-container {
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-auth {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .btn-auth:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-auth:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .message.success {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .message.error {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .upload-link {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .upload-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .upload-link a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .token-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            display: none;
+            word-break: break-all;
+        }
+
+        .token-info h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .token-info p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .token-value {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+    </style>
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="header">
+            <h1><i class="fas fa-shield-alt"></i> Auth System</h1>
+            <p>Sistema de Autenticação JWT</p>
+        </div>
+
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="switchTab('login')">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+            <button class="tab-button" onclick="switchTab('register')">
+                <i class="fas fa-user-plus"></i> Registro
+            </button>
+        </div>
+
+        <!-- Formulário de Login -->
+        <div id="login-form" class="form-container active">
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="login-username">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <input type="text" id="login-username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="login-password">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <input type="password" id="login-password" name="password" required>
+                </div>
+
+                <button type="submit" class="btn-auth" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Fazer Login
+                </button>
+            </form>
+        </div>
+
+        <!-- Formulário de Registro -->
+        <div id="register-form" class="form-container">
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="register-username">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <input type="text" id="register-username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="register-email">
+                        <i class="fas fa-envelope"></i> Email
+                    </label>
+                    <input type="email" id="register-email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="register-password">
+                        <i class="fas fa-lock"></i> Password (min. 6 caracteres)
+                    </label>
+                    <input type="password" id="register-password" name="password" required minlength="6">
+                </div>
+
+                <button type="submit" class="btn-auth" id="register-btn">
+                    <i class="fas fa-user-plus"></i> Criar Conta
+                </button>
+            </form>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div id="token-info" class="token-info">
+            <h4><i class="fas fa-key"></i> Token JWT Gerado:</h4>
+            <p>Use este token no header Authorization: Bearer &lt;token&gt;</p>
+            <div id="token-value" class="token-value"></div>
+        </div>
+
+        <div id="upload-link" class="upload-link">
+            <a href="frontend_atividade.html">
+                <i class="fas fa-upload"></i> Ir para Upload de Arquivos
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Estado global
+        let currentToken = null;
+
+        // Função para alternar entre abas
+        function switchTab(tab) {
+            // Atualizar botões
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Atualizar formulários
+            document.querySelectorAll('.form-container').forEach(form => {
+                form.classList.remove('active');
+            });
+            document.getElementById(`${tab}-form`).classList.add('active');
+
+            // Limpar mensagens
+            hideMessage();
+            hideTokenInfo();
+        }
+
+        // Função para exibir mensagens
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            
+            setTimeout(() => {
+                hideMessage();
+            }, 5000);
+        }
+
+        function hideMessage() {
+            document.getElementById('message').style.display = 'none';
+        }
+
+        // Função para mostrar informações do token
+        function showTokenInfo(token) {
+            currentToken = token;
+            document.getElementById('token-value').textContent = token;
+            document.getElementById('token-info').style.display = 'block';
+            document.getElementById('upload-link').style.display = 'block';
+            
+            // Salvar token no localStorage
+            localStorage.setItem('authToken', token);
+        }
+
+        function hideTokenInfo() {
+            document.getElementById('token-info').style.display = 'none';
+            document.getElementById('upload-link').style.display = 'none';
+        }
+
+        // Função para alterar estado do botão
+        function setButtonLoading(buttonId, loading) {
+            const btn = document.getElementById(buttonId);
+            if (loading) {
+                btn.innerHTML = '<div class="loading"></div>Processando...';
+                btn.disabled = true;
+            } else {
+                if (buttonId === 'login-btn') {
+                    btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Fazer Login';
+                } else {
+                    btn.innerHTML = '<i class="fas fa-user-plus"></i> Criar Conta';
+                }
+                btn.disabled = false;
+            }
+        }
+
+        // Handler do Login
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            
+            setButtonLoading('login-btn', true);
+            hideMessage();
+            hideTokenInfo();
+
+            try {
+                const response = await fetch('http://localhost:3000/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('✅ Login realizado com sucesso!', 'success');
+                    showTokenInfo(data.token);
+                    
+                    // Limpar formulário
+                    document.getElementById('login-username').value = '';
+                    document.getElementById('login-password').value = '';
+                } else {
+                    showMessage(`❌ ${data.message}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Erro no login:', error);
+                showMessage('❌ Erro de conexão. Verifique se o servidor está rodando.', 'error');
+            } finally {
+                setButtonLoading('login-btn', false);
+            }
+        }
+
+        // Handler do Registro
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('register-username').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            
+            setButtonLoading('register-btn', true);
+            hideMessage();
+
+            try {
+                const response = await fetch('http://localhost:3000/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('✅ Conta criada com sucesso! Agora faça login.', 'success');
+                    
+                    // Limpar formulário
+                    document.getElementById('register-username').value = '';
+                    document.getElementById('register-email').value = '';
+                    document.getElementById('register-password').value = '';
+                    
+                    // Mudar para aba de login após 2 segundos
+                    setTimeout(() => {
+                        switchTab('login');
+                    }, 2000);
+                } else {
+                    showMessage(`❌ ${data.message}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Erro no registro:', error);
+                showMessage('❌ Erro de conexão. Verifique se o servidor está rodando.', 'error');
+            } finally {
+                setButtonLoading('register-btn', false);
+            }
+        }
+
+        // Verificar se há token salvo ao carregar a página
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedToken = localStorage.getItem('authToken');
+            if (savedToken) {
+                showTokenInfo(savedToken);
+                showMessage('ℹ️ Token salvo encontrado. Você pode fazer upload de arquivos.', 'success');
+            }
+        });
+    </script>
+</body>
+</html>

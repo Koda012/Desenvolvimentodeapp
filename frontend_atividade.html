@@ -228,6 +228,19 @@
         <div class="header">
             <h1><i class="fas fa-cloud-upload-alt"></i> Upload Manager</h1>
             <p>Envie múltiplas imagens de forma rápida e segura</p>
+            <div id="user-info" style="margin-top: 15px; display: none;">
+                <p style="color: #667eea; font-weight: 600;">
+                    <i class="fas fa-user-check"></i> Logado como: <span id="username-display"></span>
+                </p>
+            </div>
+            <div id="auth-warning" style="margin-top: 15px; padding: 15px; background: rgba(244, 67, 54, 0.1); border-radius: 10px; border-left: 4px solid #f44336;">
+                <p style="color: #d32f2f; font-weight: 500;">
+                    <i class="fas fa-exclamation-triangle"></i> É necessário fazer login para enviar arquivos.
+                    <a href="auth.html" style="color: #667eea; text-decoration: none; font-weight: 600;">
+                        Clique aqui para fazer login
+                    </a>
+                </p>
+            </div>
         </div>
 
         <div class="upload-section">
@@ -263,6 +276,10 @@
         const btnEnviar = document.getElementById('btnEnviar');
         const mensagemDiv = document.getElementById('mensagem');
         const arquivosSelecionadosDiv = document.getElementById('arquivosSelecionados');
+        
+        // Estado de autenticação
+        let authToken = null;
+        let currentUser = null;
 
         // Event listener para mostrar arquivos selecionados
         arquivoInput.addEventListener('change', function() {
@@ -315,8 +332,44 @@
             }
         }
 
-        // FUNÇÃO PRINCIPAL - IMPLEMENTAR AQUI
+        // Função para verificar autenticação
+        function verificarAutenticacao() {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                authToken = token;
+                // Decodificar token para obter informações do usuário (sem validação - apenas para exibição)
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    currentUser = payload;
+                    
+                    // Mostrar informações do usuário
+                    document.getElementById('username-display').textContent = payload.username;
+                    document.getElementById('user-info').style.display = 'block';
+                    document.getElementById('auth-warning').style.display = 'none';
+                    
+                    return true;
+                } catch (e) {
+                    console.error('Token inválido:', e);
+                    localStorage.removeItem('authToken');
+                }
+            }
+            
+            // Não autenticado
+            document.getElementById('user-info').style.display = 'none';
+            document.getElementById('auth-warning').style.display = 'block';
+            btnEnviar.disabled = true;
+            btnEnviar.innerHTML = '<i class="fas fa-lock"></i> Login Necessário';
+            return false;
+        }
+
+        // FUNÇÃO PRINCIPAL - IMPLEMENTAÇÃO COM AUTENTICAÇÃO JWT
         async function enviarArquivos() {
+            // Verificar autenticação primeiro
+            if (!verificarAutenticacao()) {
+                exibirMensagem('❌ Você precisa fazer login para enviar arquivos!', 'error');
+                return;
+            }
+
             // Verificar se há arquivos selecionados
             if (!arquivoInput.files || arquivoInput.files.length === 0) {
                 exibirMensagem('Por favor, selecione pelo menos um arquivo!', 'error');
@@ -336,20 +389,29 @@
                     formData.append('meusArquivos', arquivo);
                 }
 
-                // 4. Executar o fetch
+                // 4. Executar o fetch COM TOKEN JWT
                 const response = await fetch('http://localhost:3000/upload', {
                     method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}` // Header de autorização JWT
+                    },
                     body: formData
                 });
 
                 // 5. Tratamento de Resposta
                 if (response.ok) {
                     const resultado = await response.json();
-                    exibirMensagem(`✅ Sucesso! ${arquivoInput.files.length} arquivo(s) enviado(s) com êxito!`, 'success');
+                    exibirMensagem(`✅ Sucesso! ${arquivoInput.files.length} arquivo(s) enviado(s) com êxito! (Upload por usuário ID: ${resultado.uploadedBy})`, 'success');
                     
                     // Limpar seleção após sucesso
                     arquivoInput.value = '';
                     arquivosSelecionadosDiv.innerHTML = '';
+                } else if (response.status === 401 || response.status === 403) {
+                    // Token inválido ou expirado
+                    localStorage.removeItem('authToken');
+                    authToken = null;
+                    verificarAutenticacao();
+                    exibirMensagem('❌ Sessão expirada. Faça login novamente.', 'error');
                 } else {
                     const erro = await response.json();
                     exibirMensagem(`❌ Erro: ${erro.message || 'Falha no upload'}`, 'error');
@@ -403,6 +465,18 @@
             arquivoInput.files = files;
             mostrarArquivosSelecionados();
         }
+
+        // Verificar autenticação ao carregar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            verificarAutenticacao();
+        });
+
+        // Monitorar mudanças no localStorage (para quando o usuário faz login em outra aba)
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'authToken') {
+                verificarAutenticacao();
+            }
+        });
     </script>
 </body>
 </html>
