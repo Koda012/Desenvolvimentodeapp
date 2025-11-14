@@ -236,10 +236,40 @@
             <div id="auth-warning" style="margin-top: 15px; padding: 15px; background: rgba(244, 67, 54, 0.1); border-radius: 10px; border-left: 4px solid #f44336;">
                 <p style="color: #d32f2f; font-weight: 500;">
                     <i class="fas fa-exclamation-triangle"></i> É necessário fazer login para enviar arquivos.
-                    <a href="auth.html" style="color: #667eea; text-decoration: none; font-weight: 600;">
-                        Clique aqui para fazer login
+                    <a href="#" id="open-auth" style="color: #667eea; text-decoration: none; font-weight: 600;">
+                        Faça login aqui
                     </a>
                 </p>
+            </div>
+        </div>
+
+        <!-- Painel de Autenticação embutido -->
+        <div id="auth-panel" style="margin-top:20px; display:none;">
+            <div style="display:flex; gap:10px; justify-content:center; margin-bottom:12px;">
+                <button id="tab-login" class="btn-upload" style="padding:8px 18px; border-radius:12px; font-size:0.95rem;">Login</button>
+                <button id="tab-register" class="btn-upload" style="padding:8px 18px; border-radius:12px; font-size:0.95rem;">Registro</button>
+                <button id="btn-logout" style="display:none; background:#f44336; color:white; border:none; padding:8px 18px; border-radius:12px; cursor:pointer;">Sair</button>
+            </div>
+
+            <div id="form-login" style="display:none;">
+                <div style="margin-bottom:10px;">
+                    <input id="login-username" placeholder="Username" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(0,0,0,0.1); margin-bottom:8px;">
+                    <input id="login-password" type="password" placeholder="Password" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(0,0,0,0.1);">
+                </div>
+                <div style="text-align:center;">
+                    <button id="login-submit" class="btn-upload" style="padding:10px 20px; border-radius:10px;">Entrar</button>
+                </div>
+            </div>
+
+            <div id="form-register" style="display:none; margin-top:12px;">
+                <div style="margin-bottom:10px;">
+                    <input id="register-username" placeholder="Username" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(0,0,0,0.1); margin-bottom:8px;">
+                    <input id="register-email" type="email" placeholder="Email" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(0,0,0,0.1); margin-bottom:8px;">
+                    <input id="register-password" type="password" placeholder="Password (min 6)" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(0,0,0,0.1);">
+                </div>
+                <div style="text-align:center;">
+                    <button id="register-submit" class="btn-upload" style="padding:10px 20px; border-radius:10px;">Criar Conta</button>
+                </div>
             </div>
         </div>
 
@@ -277,9 +307,10 @@
         const mensagemDiv = document.getElementById('mensagem');
         const arquivosSelecionadosDiv = document.getElementById('arquivosSelecionados');
         
-        // Estado de autenticação
-        let authToken = null;
-        let currentUser = null;
+    // Estado de autenticação
+    let authToken = null;
+    let currentUser = null;
+    let authUIInit = false; // evita múltiplos bindings de eventos
 
         // Event listener para mostrar arquivos selecionados
         arquivoInput.addEventListener('change', function() {
@@ -360,6 +391,149 @@
             btnEnviar.disabled = true;
             btnEnviar.innerHTML = '<i class="fas fa-lock"></i> Login Necessário';
             return false;
+        }
+
+        // Atualizar UI para mostrar/ocultar formulários e upload
+        function updateUI() {
+            const token = localStorage.getItem('authToken');
+            const authPanel = document.getElementById('auth-panel');
+            const btnLogout = document.getElementById('btn-logout');
+            const openAuth = document.getElementById('open-auth');
+
+            if (token) {
+                // usuário autenticado
+                authToken = token;
+                authPanel.style.display = 'block';
+                document.getElementById('form-login').style.display = 'none';
+                document.getElementById('form-register').style.display = 'none';
+                btnLogout.style.display = 'inline-block';
+                document.getElementById('auth-warning').style.display = 'none';
+                btnEnviar.disabled = false;
+                btnEnviar.innerHTML = '<i class="fas fa-upload"></i> Enviar Arquivos';
+
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    document.getElementById('username-display').textContent = payload.username || '';
+                    document.getElementById('user-info').style.display = 'block';
+                } catch (e) {
+                    document.getElementById('user-info').style.display = 'none';
+                }
+            } else {
+                // não autenticado
+                authPanel.style.display = 'block';
+                document.getElementById('form-login').style.display = 'none';
+                document.getElementById('form-register').style.display = 'none';
+                btnLogout.style.display = 'none';
+                document.getElementById('user-info').style.display = 'none';
+                document.getElementById('auth-warning').style.display = 'block';
+                btnEnviar.disabled = true;
+                btnEnviar.innerHTML = '<i class="fas fa-lock"></i> Login Necessário';
+            }
+
+            // Inicializar bindings apenas uma vez
+            if (!authUIInit) {
+                // Abrir auth panel quando link clicado
+                openAuth.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    authPanel.style.display = authPanel.style.display === 'block' ? 'none' : 'block';
+                    // por padrão abre em login
+                    document.getElementById('form-login').style.display = 'block';
+                    document.getElementById('form-register').style.display = 'none';
+                });
+
+                // Tabs
+                document.getElementById('tab-login').addEventListener('click', function() {
+                    document.getElementById('form-login').style.display = 'block';
+                    document.getElementById('form-register').style.display = 'none';
+                });
+                document.getElementById('tab-register').addEventListener('click', function() {
+                    document.getElementById('form-login').style.display = 'none';
+                    document.getElementById('form-register').style.display = 'block';
+                });
+
+                // Logout
+                btnLogout.addEventListener('click', function() {
+                    localStorage.removeItem('authToken');
+                    authToken = null;
+                    currentUser = null;
+                    updateUI();
+                    exibirMensagem('Você saiu da conta.', 'success');
+                });
+
+                authUIInit = true;
+            }
+        }
+
+        // Função para registrar usuário
+        async function handleRegister() {
+            const username = document.getElementById('register-username').value.trim();
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value;
+
+            if (!username || !email || !password) {
+                exibirMensagem('Preencha todos os campos do registro.', 'error');
+                return;
+            }
+            if (password.length < 6) {
+                exibirMensagem('A senha deve ter pelo menos 6 caracteres.', 'error');
+                return;
+            }
+
+            try {
+                document.getElementById('register-submit').disabled = true;
+                const res = await fetch('http://localhost:3000/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    exibirMensagem('Conta criada com sucesso. Faça login.', 'success');
+                    document.getElementById('form-register').style.display = 'none';
+                    document.getElementById('form-login').style.display = 'block';
+                } else {
+                    exibirMensagem(data.message || 'Erro no registro.', 'error');
+                }
+            } catch (err) {
+                console.error('Erro no registro:', err);
+                exibirMensagem('Erro de conexão durante o registro.', 'error');
+            } finally {
+                document.getElementById('register-submit').disabled = false;
+            }
+        }
+
+        // Função para fazer login
+        async function handleLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            if (!username || !password) {
+                exibirMensagem('Preencha username e password.', 'error');
+                return;
+            }
+
+            try {
+                document.getElementById('login-submit').disabled = true;
+                const res = await fetch('http://localhost:3000/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (res.ok && data.token) {
+                    localStorage.setItem('authToken', data.token);
+                    authToken = data.token;
+                    exibirMensagem('Login efetuado com sucesso.', 'success');
+                    updateUI();
+                } else {
+                    exibirMensagem(data.message || 'Credenciais inválidas.', 'error');
+                }
+            } catch (err) {
+                console.error('Erro no login:', err);
+                exibirMensagem('Erro de conexão durante o login.', 'error');
+            } finally {
+                document.getElementById('login-submit').disabled = false;
+            }
         }
 
         // FUNÇÃO PRINCIPAL - IMPLEMENTAÇÃO COM AUTENTICAÇÃO JWT
@@ -466,15 +640,22 @@
             mostrarArquivosSelecionados();
         }
 
-        // Verificar autenticação ao carregar a página
+        // Inicialização ao carregar a página
         document.addEventListener('DOMContentLoaded', function() {
-            verificarAutenticacao();
+            // Atualizar UI conforme presença do token
+            updateUI();
+
+            // Vincular handlers dos botões de login/registro
+            const loginBtn = document.getElementById('login-submit');
+            const registerBtn = document.getElementById('register-submit');
+            if (loginBtn) loginBtn.addEventListener('click', function(e){ e.preventDefault(); handleLogin(); });
+            if (registerBtn) registerBtn.addEventListener('click', function(e){ e.preventDefault(); handleRegister(); });
         });
 
-        // Monitorar mudanças no localStorage (para quando o usuário faz login em outra aba)
+        // Monitorar mudanças no localStorage (quando o token é alterado em outra aba)
         window.addEventListener('storage', function(e) {
             if (e.key === 'authToken') {
-                verificarAutenticacao();
+                updateUI();
             }
         });
     </script>
