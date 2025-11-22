@@ -481,7 +481,7 @@
 
             try {
                 document.getElementById('register-submit').disabled = true;
-                const res = await fetch('http://localhost:3000/register', {
+                const res = await fetch('http://localhost:3000/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, email, password })
@@ -514,7 +514,7 @@
 
             try {
                 document.getElementById('login-submit').disabled = true;
-                const res = await fetch('http://localhost:3000/login', {
+                const res = await fetch('http://localhost:3000/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
@@ -564,7 +564,7 @@
                 }
 
                 // 4. Executar o fetch COM TOKEN JWT
-                const response = await fetch('http://localhost:3000/upload', {
+                const response = await fetch('http://localhost:3000/file/upload', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${authToken}` // Header de autorização JWT

@@ -1,8 +1,18 @@
 const bcrypt = require('bcryptjs');
 
 // Simulação de banco de dados em memória (em produção, usar banco real)
-let users = [];
-let nextUserId = 1;
+let users = [
+    // Usuário Admin para testes (senha: admin123)
+    {
+        id: 1,
+        username: 'admin',
+        email: 'admin@sistema.com',
+        password: '$2a$10$XqZ8YJ5xGZvK9K4pYqL0FeH8vQxQH5YbZLqZ0qfH5VqZ8YJ5xGZvK', // hash de 'admin123'
+        role: 'admin',
+        createdAt: new Date()
+    }
+];
+let nextUserId = 2;
 
 const userModel = {
     // Criar um novo usuário
@@ -18,12 +28,13 @@ const userModel = {
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
 
-            // Criar objeto do usuário
+            // Criar objeto do usuário com role 'user' por padrão
             const newUser = {
                 id: nextUserId++,
                 username: userData.username,
                 email: userData.email,
                 password: hashedPassword,
+                role: userData.role || 'user', // Role padrão: 'user'
                 createdAt: new Date()
             };
 
